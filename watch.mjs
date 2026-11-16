@@ -27,6 +27,11 @@ else if (down && st.down && now - st.lastAlert >= 3 * 3600e3) await send(`[자�
 else if (!down && st.down) { st.down = false; await send(`[자동 알림] 맥 복구됨. 멈춰 있던 시간 약 ${Math.max(1, Math.round((last - st.downSince) / 60e3))}분. 밀린 문자·리드·루틴 따라잡기 자동 실행 중.`); }
 if (degraded && !st.degraded) { st.degraded = true; await send(`[자동 알림] 맥은 켜져 있지만 문지기 데몬 로그가 ${dAge}분째 멈춤. 고객 문자·리드 감시가 멈췄을 수 있습니다. 자동 재시작 시도 중, 계속되면 맥 확인 필요.`); }
 if (!degraded && st.degraded) st.degraded = false;
+// 11/16 루틴 스케줄러 정지(next_run_at이 30분 넘게 지남, 11/12 2시간 40분 정지 사고)
+const sLag = hb && typeof hb.schedLagMin === 'number' ? hb.schedLagMin : -1;
+const schedDown = !down && sLag > 30;
+if (schedDown && !st.schedDown) { st.schedDown = true; await send(`[자동 알림] 맥은 켜져 있지만 Aside 루틴 예약 실행이 ${sLag}분째 밀림(스케줄러 정지 의심). 루틴(아침 팔로업·블로그·점검 등)이 안 돌고 있을 수 있습니다. Aside 앱 재시작이 필요할 수 있어요. 절차: docs/disaster.md`); }
+if (!schedDown && st.schedDown) st.schedDown = false;
 fs.writeFileSync('state.json', JSON.stringify(st));
 try { // state 브랜치: 단일 커밋 강제 푸시
   const blob = sh('git hash-object -w state.json').trim(), tree = sh(`printf '100644 blob ${blob}\\tstate.json\\n' | git mktree`).trim();
