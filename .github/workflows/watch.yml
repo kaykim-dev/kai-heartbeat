@@ -1,0 +1,19 @@
+name: mac-watch
+on:
+  schedule: [{ cron: '*/15 * * * *' }]
+  workflow_dispatch:
+    inputs:
+      test: { description: 'true면 시험 알림 1회', required: false, default: 'false' }
+permissions: { contents: write }
+concurrency: mac-watch
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - run: node watch.mjs
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          TEST: ${{ github.event.inputs.test }}
